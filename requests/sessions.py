@@ -150,8 +150,6 @@ class SessionRedirectMixin(object):
         url = self.get_redirect_target(resp)
         previous_fragment = urlparse(req.url).fragment
         while url:
-            prepared_request = req.copy()
-
             # Update history and keep track of redirects.
             # resp.history must ignore the original request in this loop
             hist.append(resp)
@@ -189,46 +187,42 @@ class SessionRedirectMixin(object):
             else:
                 url = requote_uri(url)
 
-            prepared_request.url = to_native_string(url)
+            req.url = to_native_string(url)
 
-            self.rebuild_method(prepared_request, resp)
+            self.rebuild_method(req, resp)
 
             # https://github.com/psf/requests/issues/1084
             if resp.status_code not in (codes.temporary_redirect, codes.permanent_redirect):
                 # https://github.com/psf/requests/issues/3490
                 purged_headers = ('Content-Length', 'Content-Type', 'Transfer-Encoding')
                 for header in purged_headers:
-                    prepared_request.headers.pop(header, None)
-                prepared_request.body = None
+                    req.headers.pop(header, None)
+                req.body = None
 
-            headers = prepared_request.headers
+            headers = req.headers
             headers.pop('Cookie', None)
 
             # Extract any cookies sent on the response to the cookiejar
-            # in the new request. Because we've mutated our copied prepared
-            # request, use the old one that we haven't yet touched.
-            extract_cookies_to_jar(prepared_request._cookies, req, resp.raw)
-            merge_cookies(prepared_request._cookies, self.cookies)
-            prepared_request.prepare_cookies(prepared_request._cookies)
+            # in the new request.
+            extract_cookies_to_jar(req._cookies, req, resp.raw)
+            merge_cookies(req._cookies, self.cookies)
+            req.prepare_cookies(req._cookies)
 
             # Rebuild auth and proxy information.
-            proxies = self.rebuild_proxies(prepared_request, proxies)
-            self.rebuild_auth(prepared_request, resp)
+            proxies = self.rebuild_proxies(req, proxies)
+            self.rebuild_auth(req, resp)
 
             # A failed tell() sets `_body_position` to `object()`. This non-None
             # value ensures `rewindable` will be True, allowing us to raise an
             # UnrewindableBodyError, instead of hanging the connection.
             rewindable = (
-                prepared_request._body_position is not None and
+                req._body_position is not None and
                 ('Content-Length' in headers or 'Transfer-Encoding' in headers)
             )
 
             # Attempt to rewind consumed file-like object.
             if rewindable:
-                rewind_body(prepared_request)
-
-            # Override the original request.
-            req = prepared_request
+                rewind_body(req)
 
             if yield_requests:
                 yield req
@@ -245,7 +239,7 @@ class SessionRedirectMixin(object):
                     **adapter_kwargs
                 )
 
-                extract_cookies_to_jar(self.cookies, prepared_request, resp.raw)
+                extract_cookies_to_jar(self.cookies, req, resp.raw)
 
                 # extract redirect url, if any, for the next loop
                 url = self.get_redirect_target(resp)

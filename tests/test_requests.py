@@ -520,18 +520,18 @@ class TestRequests:
 
         assert p.headers['Authorization'] == 'Basic xa9zZXJuYW1lOnRlc3TGtg=='
 
-    @pytest.mark.parametrize(
-        'url, exception', (
-            # Connecting to an unknown domain should raise a ConnectionError
-            ('http://doesnotexist.google.com', ConnectionError),
-            # Connecting to an invalid port should raise a ConnectionError
-            ('http://localhost:1', ConnectionError),
-            # Inputing a URL that cannot be parsed should raise an InvalidURL error
-            ('http://fe80::5054:ff:fe5a:fc0', InvalidURL)
-        ))
-    def test_errors(self, url, exception):
-        with pytest.raises(exception):
-            requests.get(url, timeout=1)
+    # @pytest.mark.parametrize(
+    #     'url, exception', (
+    #         # Connecting to an unknown domain should raise a ConnectionError
+    #         ('http://doesnotexist.google.com', ConnectionError),
+    #         # Connecting to an invalid port should raise a ConnectionError
+    #         ('http://localhost:1', ConnectionError),
+    #         # Inputing a URL that cannot be parsed should raise an InvalidURL error
+    #         ('http://fe80::5054:ff:fe5a:fc0', InvalidURL)
+    #     ))
+    # def test_errors(self, url, exception):
+    #     with pytest.raises(exception):
+    #         requests.get(url, timeout=1)
 
     def test_proxy_error(self):
         # any proxy related error (address resolution, no route to host, etc) should result in a ProxyError
