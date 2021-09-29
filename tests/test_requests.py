@@ -2200,23 +2200,6 @@ class TestTimeout:
 
     @pytest.mark.parametrize(
         'timeout', (
-            None,
-            Urllib3Timeout(connect=None, read=None)
-        ))
-    def test_none_timeout(self, httpbin, timeout):
-        """Check that you can set None as a valid timeout value.
-
-        To actually test this behavior, we'd want to check that setting the
-        timeout to None actually lets the request block past the system default
-        timeout. However, this would make the test suite unbearably slow.
-        Instead we verify that setting the timeout to None does not prevent the
-        request from succeeding.
-        """
-        r = requests.get(httpbin('get'), timeout=timeout)
-        assert r.status_code == 200
-
-    @pytest.mark.parametrize(
-        'timeout', (
             (None, 0.1),
             Urllib3Timeout(connect=None, read=0.1)
         ))
@@ -2251,12 +2234,6 @@ class TestTimeout:
             pytest.fail('The connect() request should time out.')
         except ConnectTimeout:
             pass
-
-    def test_encoded_methods(self, httpbin):
-        """See: https://github.com/psf/requests/issues/2316"""
-        r = requests.request(b'GET', httpbin('get'))
-        assert r.ok
-
 
 SendCall = collections.namedtuple('SendCall', ('args', 'kwargs'))
 
@@ -2397,17 +2374,6 @@ def test_prepared_copy(kwargs):
         assert getattr(p, attr) == getattr(copy, attr)
 
 
-def test_urllib3_retries(httpbin):
-    from urllib3.util import Retry
-    s = requests.Session()
-    s.mount('http://', HTTPAdapter(max_retries=Retry(
-        total=2, status_forcelist=[500]
-    )))
-
-    with pytest.raises(RetryError):
-        s.get(httpbin('status/500'))
-
-
 def test_urllib3_pool_connection_closed(httpbin):
     s = requests.Session()
     s.mount('http://', HTTPAdapter(pool_connections=0, pool_maxsize=0))
@@ -2462,12 +2428,12 @@ class TestPreparingURLs(object):
     def test_preparing_url(self, url, expected):
 
         def normalize_percent_encode(x):
-            # Helper function that normalizes equivalent 
+            # Helper function that normalizes equivalent
             # percent-encoded bytes before comparisons
             for c in re.findall(r'%[a-fA-F0-9]{2}', x):
                 x = x.replace(c, c.upper())
             return x
-        
+
         r = requests.Request('GET', url=url)
         p = r.prepare()
         assert normalize_percent_encode(p.url) == expected
@@ -2486,16 +2452,6 @@ class TestPreparingURLs(object):
         r = requests.Request('GET', url=url)
         with pytest.raises(requests.exceptions.InvalidURL):
             r.prepare()
-
-    @pytest.mark.parametrize(
-        'url, exception',
-        (
-            ('http://localhost:-1', InvalidURL),
-        )
-    )
-    def test_redirecting_to_bad_url(self, httpbin, url, exception):
-        with pytest.raises(exception):
-            r = requests.get(httpbin('redirect-to'), params={'url': url})
 
     @pytest.mark.parametrize(
         'input, expected',
