@@ -851,9 +851,6 @@ class TestRequests:
             headers={str('Content-Type'): 'application/octet-stream'},
             data='\xff')  # compat.str is unicode.
 
-    def test_pyopenssl_redirect(self, httpbin_secure, httpbin_ca_bundle):
-        requests.get(httpbin_secure('status', '301'), verify=httpbin_ca_bundle)
-
     def test_invalid_ca_certificate_path(self, httpbin_secure):
         INVALID_PATH = '/garbage'
         with pytest.raises(IOError) as e:
