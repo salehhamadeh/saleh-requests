@@ -80,7 +80,7 @@ class CaseInsensitiveDict(MutableMapping):
 
     # Copy is required
     def copy(self):
-        return CaseInsensitiveDict(self._store.values())
+        return self
 
     def __repr__(self):
         return str(dict(self.items()))
